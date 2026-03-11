@@ -21,12 +21,7 @@ public class TutorService {
             throw new DuplicationExistsException(ErrosMessages.EMAIL_EXISTS.getErrorMessage());
         }
 
-        Tutor newTutor = new Tutor();
-        newTutor.setName(tutorRequestDto.name());
-        newTutor.setEmail(tutorRequestDto.email());
-        newTutor.setPhone(tutorRequestDto.phone());
-
-        Tutor tutor = tutorRepository.save(newTutor);
+        Tutor tutor = tutorRepository.save(new Tutor(tutorRequestDto));
         return toTutorResponseDto(tutor);
     }
 
@@ -38,27 +33,19 @@ public class TutorService {
     public TutorResponseDto updateTutorById(Long id, TutorUpdateDto tutorUpdateDto) {
         Tutor tutor = findTutorEntityById(id);
 
-        applyTutorUpdates(tutorUpdateDto, tutor);
+        if (tutorUpdateDto.email() != null
+                && !tutor.getEmail().equals(tutorUpdateDto.email())
+                && tutorRepository.existsByEmail(tutorUpdateDto.email())) {
+            throw new DuplicationExistsException(ErrosMessages.EMAIL_EXISTS.getErrorMessage());
+        }
+
+        tutor.updateTutor(tutorUpdateDto);
         Tutor tutorUpdated = tutorRepository.save(tutor);
         return toTutorResponseDto(tutorUpdated);
     }
 
     public Tutor findTutorEntityById(Long id) {
         return tutorRepository.findById(id).orElseThrow(() -> new NotFoundException(ErrosMessages.TUTOR_NOTFOUND.getErrorMessage()));
-    }
-
-    private void applyTutorUpdates(TutorUpdateDto tutorUpdateDto, Tutor tutor) {
-        if (tutorUpdateDto.email() != null) {
-            if (!tutor.getEmail().equals(tutorUpdateDto.email()) && tutorRepository.existsByEmail(tutorUpdateDto.email())) {
-                throw new DuplicationExistsException(ErrosMessages.EMAIL_EXISTS.getErrorMessage());
-            }
-
-            tutor.setEmail(tutorUpdateDto.email());
-        }
-
-        if(tutorUpdateDto.phone() != null) {
-            tutor.setPhone(tutorUpdateDto.phone());
-        }
     }
 
     private TutorResponseDto toTutorResponseDto(Tutor tutor) {
