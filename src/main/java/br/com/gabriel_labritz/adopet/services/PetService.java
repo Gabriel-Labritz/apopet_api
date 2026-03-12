@@ -4,7 +4,6 @@ import br.com.gabriel_labritz.adopet.dto.pets.PetRequestDto;
 import br.com.gabriel_labritz.adopet.dto.pets.PetResponseDto;
 import br.com.gabriel_labritz.adopet.dto.pets.UpdatePetDto;
 import br.com.gabriel_labritz.adopet.dto.shelter.ShelterResponseDto;
-import br.com.gabriel_labritz.adopet.enums.TypePet;
 import br.com.gabriel_labritz.adopet.enums.errors.ErrosMessages;
 import br.com.gabriel_labritz.adopet.exceptions.AdoptionBusinessException;
 import br.com.gabriel_labritz.adopet.exceptions.NotFoundException;
@@ -27,18 +26,8 @@ public class PetService {
 
     public PetResponseDto registerPet(PetRequestDto petRequestDto) {
         Shelter shelter = findShelterEntityById(petRequestDto.shelterId());
-
-        Pet pet = new Pet();
-        pet.setName(petRequestDto.name());
-        pet.setType(TypePet.toPetType(petRequestDto.type()));
-        pet.setBreed(petRequestDto.breed());
-        pet.setAge(petRequestDto.age());
-        pet.setWeight(petRequestDto.weight());
-        pet.setColor(petRequestDto.color());
-        pet.setShelter(shelter);
-
-        petRepository.save(pet);
-        return toPetResponseDto(pet);
+        Pet newPet = petRepository.save(new Pet(petRequestDto, shelter));
+        return toPetResponseDto(newPet);
     }
 
     public List<PetResponseDto> getAllPets() {
@@ -61,29 +50,18 @@ public class PetService {
             throw new AdoptionBusinessException(ErrosMessages.UPDATE_PET_ADOPTED.getErrorMessage());
         }
 
-        applyPetsUpdates(updatePetDto, pet);
+        if(updatePetDto.shelterId() != null) {
+            Shelter shelter = findShelterEntityById(updatePetDto.shelterId());
+            pet.changeShelter(shelter);
+        }
 
+        pet.updatePet(updatePetDto);
         Pet petUpdated = petRepository.save(pet);
         return toPetResponseDto(petUpdated);
     }
 
     public Pet findPetEntityById(Long id) {
         return petRepository.findById(id).orElseThrow(() -> new NotFoundException(ErrosMessages.PET_NOTFOUND.getErrorMessage()));
-    }
-
-    private void applyPetsUpdates(UpdatePetDto updatePetDto, Pet pet) {
-        if(updatePetDto.shelterId() != null) {
-            Shelter shelter = findShelterEntityById(updatePetDto.shelterId());
-            pet.setShelter(shelter);
-        }
-
-        if (updatePetDto.weight() != null) {
-            pet.setWeight(updatePetDto.weight());
-        }
-
-        if(updatePetDto.age() != null) {
-            pet.setAge(updatePetDto.age());
-        }
     }
 
     private Shelter findShelterEntityById(Long id) {
