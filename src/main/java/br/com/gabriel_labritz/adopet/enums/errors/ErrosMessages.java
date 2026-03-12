@@ -14,7 +14,8 @@ public enum ErrosMessages {
     ADOPTION_IN_PROGRESS("Já existe uma adoção em andamento para esse pet."),
     LIMIT_TUTOR_ADOPTIONS("Esse tutor já atingiu o limite de adoções permitidas."),
     ADOPTION_ALREADY_REJECT("Esse tutor já teve uma solicitação reprovada para esse pet."),
-    UPDATE_PET_ADOPTED("Não é possível atualizar um pet já adotado.");
+    UPDATE_PET_ADOPTED("Não é possível atualizar um pet já adotado."),
+    DATA_ALREADY_USED("Os dados informados de email e/ou telefone já estão sendo utilizados.");
 
     private String errorMessage;
 

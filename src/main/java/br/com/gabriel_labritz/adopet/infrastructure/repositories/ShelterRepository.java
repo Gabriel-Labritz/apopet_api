@@ -6,4 +6,5 @@ import org.springframework.data.jpa.repository.JpaRepository;
 public interface ShelterRepository extends JpaRepository<Shelter, Long> {
     Boolean existsByEmail(String email);
     Boolean existsByPhone(String phone);
+    Boolean existsByEmailOrPhone(String email, String phone);
 }

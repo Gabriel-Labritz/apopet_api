@@ -17,18 +17,11 @@ public class ShelterService {
     private ShelterRepository shelterRepository;
 
     public ShelterResponseDto shelterRegister(ShelterRequestDto shelterRequestDto) {
-        if(shelterRepository.existsByEmail(shelterRequestDto.email())) {
-            throw new DuplicationExistsException(ErrosMessages.EMAIL_EXISTS.getErrorMessage());
+        if(shelterRepository.existsByEmailOrPhone(shelterRequestDto.email(), shelterRequestDto.phone())) {
+            throw new DuplicationExistsException(ErrosMessages.DATA_ALREADY_USED.getErrorMessage());
         }
 
-        if (shelterRepository.existsByPhone(shelterRequestDto.phone())) {
-            throw new DuplicationExistsException(ErrosMessages.PHONE_EXISTS.getErrorMessage());
-        }
-
-        Shelter shelter = new Shelter();
-        shelter.setEmail(shelterRequestDto.email());
-        shelter.setPhone(shelterRequestDto.phone());
-
+        Shelter shelter = new Shelter(shelterRequestDto);
         shelterRepository.save(shelter);
         return toShelterResponseDto(shelter);
     }
@@ -38,35 +31,28 @@ public class ShelterService {
         return toShelterResponseDto(shelter);
     }
 
-    public ShelterResponseDto updateShelterById(Long id, ShelterUpdateDto updateDto) {
+    public ShelterResponseDto updateShelterById(Long id, ShelterUpdateDto shelterUpdateDto) {
         Shelter shelter = findShelterEntityById(id);
 
-        applyShelterUpdates(updateDto, shelter);
+        if(shelterUpdateDto.email() != null
+                && !shelter.getEmail().equals(shelterUpdateDto.email())
+                && shelterRepository.existsByEmail(shelterUpdateDto.email())) {
+            throw new DuplicationExistsException(ErrosMessages.EMAIL_EXISTS.getErrorMessage());
+        }
 
+        if(shelterUpdateDto.phone() != null
+                && !shelter.getPhone().equals(shelterUpdateDto.phone())
+                && shelterRepository.existsByPhone(shelterUpdateDto.phone())) {
+            throw new DuplicationExistsException(ErrosMessages.PHONE_EXISTS.getErrorMessage());
+        }
+
+        shelter.updateShelter(shelterUpdateDto);
         Shelter updatedShelter = shelterRepository.save(shelter);
         return toShelterResponseDto(updatedShelter);
     }
 
     private Shelter findShelterEntityById(Long id) {
         return shelterRepository.findById(id).orElseThrow(() -> new NotFoundException(ErrosMessages.SHELTER_NOTFOUND.getErrorMessage()));
-    }
-
-    private void applyShelterUpdates(ShelterUpdateDto dto, Shelter shelter) {
-        if(dto.email() != null) {
-            if(!shelter.getEmail().equals(dto.email()) && shelterRepository.existsByEmail(dto.email())) {
-                throw new DuplicationExistsException(ErrosMessages.EMAIL_EXISTS.getErrorMessage());
-            }
-
-            shelter.setEmail(dto.email());
-        }
-
-        if(dto.phone() != null) {
-            if(!shelter.getPhone().equals(dto.phone()) && shelterRepository.existsByPhone(dto.phone())) {
-                throw new DuplicationExistsException(ErrosMessages.PHONE_EXISTS.getErrorMessage());
-            }
-
-            shelter.setPhone(dto.phone());
-        }
     }
 
     private ShelterResponseDto toShelterResponseDto(Shelter shelter) {
