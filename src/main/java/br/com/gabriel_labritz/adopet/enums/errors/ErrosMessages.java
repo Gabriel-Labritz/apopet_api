@@ -15,7 +15,9 @@ public enum ErrosMessages {
     LIMIT_TUTOR_ADOPTIONS("Esse tutor já atingiu o limite de adoções permitidas."),
     ADOPTION_ALREADY_REJECT("Esse tutor já teve uma solicitação reprovada para esse pet."),
     UPDATE_PET_ADOPTED("Não é possível atualizar um pet já adotado."),
-    DATA_ALREADY_USED("Os dados informados de email e/ou telefone já estão sendo utilizados.");
+    DATA_ALREADY_USED("Os dados informados de email e/ou telefone já estão sendo utilizados."),
+    ADOPTION_CANNOT_BE_APPROVED("Essa adoção não pode ser aprovada."),
+    ADOPTION_CANNOT_BE_REJECTED("Essa adoção não pode ser reprovada.");
 
     private String errorMessage;
 
