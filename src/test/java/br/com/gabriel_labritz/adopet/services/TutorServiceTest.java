@@ -3,6 +3,7 @@ package br.com.gabriel_labritz.adopet.services;
 import br.com.gabriel_labritz.adopet.dto.tutor.TutorRequestDto;
 import br.com.gabriel_labritz.adopet.dto.tutor.TutorResponseDto;
 import br.com.gabriel_labritz.adopet.exceptions.DuplicationExistsException;
+import br.com.gabriel_labritz.adopet.exceptions.NotFoundException;
 import br.com.gabriel_labritz.adopet.infrastructure.entities.Tutor;
 import br.com.gabriel_labritz.adopet.infrastructure.repositories.TutorRepository;
 import org.junit.jupiter.api.*;
@@ -13,8 +14,9 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -29,6 +31,9 @@ class TutorServiceTest {
 
     @Captor
     private ArgumentCaptor<Tutor> tutorCaptor;
+
+    @Captor
+    private ArgumentCaptor<Long> tutorIdCaptor;
 
     private TutorRequestDto tutorRequestDto;
 
@@ -99,6 +104,35 @@ class TutorServiceTest {
 
             // Assert
             assertEquals(result, tutorResponseDto);
+        }
+    }
+
+    @Nested
+    class findTutorEntityById {
+        @Test
+        @DisplayName("Deve lançar uma NotFoundException quando o tutor não for encontrado.")
+        void shouldThrowNotFoundExceptionWhenTutorNotFound() {
+            // Arrange
+            Long tutorId = 2L;
+            when(tutorRepository.findById(tutorId)).thenReturn(Optional.empty());
+
+            // Act + Assert
+            assertThrows(NotFoundException.class, () -> tutorService.findTutorEntityById(tutorId));
+        }
+
+        @Test
+        @DisplayName("Deve retornar com sucesso um tutor pelo id")
+        void shouldReturnATutorByIdParameter() {
+            // Arrange
+            Long tutorId = 2L;
+            when(tutorRepository.findById(tutorId)).thenReturn(Optional.of(tutor));
+
+            // Act
+            Tutor result = tutorService.findTutorEntityById(tutorId);
+
+            // Assert
+            verify(tutorRepository).findById(tutorId);
+            assertEquals(tutor, result);
         }
     }
 }
