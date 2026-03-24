@@ -102,4 +102,33 @@ class ShelterServiceTest {
             assertEquals(shelterResponseDto, result);
         }
     }
+
+    @Nested
+    class findShelterEntityById {
+        @Test
+        @DisplayName("Deve lançar uma NotFoundException quando o abrigo não for encontrado.")
+        void shouldThrowNotFoundExceptionWhenShelterNotFound() {
+            // Arrange
+            Long shelterId = 1L;
+            when(shelterRepository.findById(shelterId)).thenReturn(Optional.empty());
+
+            // Act + Assert
+            assertThrows(NotFoundException.class, () -> shelterService.getShelterById(shelterId));
+        }
+
+        @Test
+        @DisplayName("Deve retornar com sucesso um abrigo pelo id.")
+        void shouldReturnAShelterById() {
+            // Arrange
+            Long shelterId = 1L;
+            when(shelterRepository.findById(shelterId)).thenReturn(Optional.of(shelter));
+
+            // Act
+            Shelter result = shelterService.findShelterEntityById(shelterId);
+
+            // Assert
+            assertNotNull(result);
+            assertEquals(shelter, result);
+        }
+    }
 }
