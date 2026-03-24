@@ -18,8 +18,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ShelterServiceTest {
@@ -42,7 +41,7 @@ class ShelterServiceTest {
     void setUp() {
          this.dto = new ShelterRequestDto("shelter@email.com", "1123456789");
          this.shelter = new Shelter(dto);
-         this.shelterResponseDto = new ShelterResponseDto(shelter.getId(), "shelter@email.com", "1123456789");
+         this.shelterResponseDto = new ShelterResponseDto(shelter.getId(), dto.email(), dto.phone());
     }
 
     @Nested
@@ -131,4 +130,24 @@ class ShelterServiceTest {
             assertEquals(shelter, result);
         }
     }
+
+    @Nested
+    class getShelterById {
+        @Test
+        @DisplayName("Deve retornar um abrigo.")
+        void shouldReturnAShelter() {
+            // Arrange
+            Long shelterId = 1L;
+            when(shelterRepository.findById(shelterId)).thenReturn(Optional.of(shelter));
+
+            // Act
+            ShelterResponseDto result = shelterService.getShelterById(shelterId);
+
+            // Assert
+            verify(shelterRepository).findById(shelterId);
+            assertNotNull(result);
+            assertEquals(shelterResponseDto, result);
+        }
+    }
+
 }
