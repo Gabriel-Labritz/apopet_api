@@ -51,7 +51,7 @@ public class ShelterService {
         return toShelterResponseDto(updatedShelter);
     }
 
-    private Shelter findShelterEntityById(Long id) {
+    public Shelter findShelterEntityById(Long id) {
         return shelterRepository.findById(id).orElseThrow(() -> new NotFoundException(ErrosMessages.SHELTER_NOTFOUND.getErrorMessage()));
     }
 

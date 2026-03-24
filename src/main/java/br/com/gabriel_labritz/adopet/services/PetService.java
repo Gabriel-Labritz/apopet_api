@@ -10,7 +10,6 @@ import br.com.gabriel_labritz.adopet.exceptions.NotFoundException;
 import br.com.gabriel_labritz.adopet.infrastructure.entities.Pet;
 import br.com.gabriel_labritz.adopet.infrastructure.entities.Shelter;
 import br.com.gabriel_labritz.adopet.infrastructure.repositories.PetRepository;
-import br.com.gabriel_labritz.adopet.infrastructure.repositories.ShelterRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -22,10 +21,10 @@ public class PetService {
     private PetRepository petRepository;
 
     @Autowired
-    ShelterRepository shelterRepository;
+    ShelterService shelterService;
 
     public PetResponseDto registerPet(PetRequestDto petRequestDto) {
-        Shelter shelter = findShelterEntityById(petRequestDto.shelterId());
+        Shelter shelter = shelterService.findShelterEntityById(petRequestDto.shelterId());
         Pet newPet = petRepository.save(new Pet(petRequestDto, shelter));
         return toPetResponseDto(newPet);
     }
@@ -51,7 +50,7 @@ public class PetService {
         }
 
         if(updatePetDto.shelterId() != null) {
-            Shelter shelter = findShelterEntityById(updatePetDto.shelterId());
+            Shelter shelter = shelterService.findShelterEntityById(updatePetDto.shelterId());
             pet.changeShelter(shelter);
         }
 
@@ -62,12 +61,6 @@ public class PetService {
 
     public Pet findPetEntityById(Long id) {
         return petRepository.findById(id).orElseThrow(() -> new NotFoundException(ErrosMessages.PET_NOTFOUND.getErrorMessage()));
-    }
-
-    private Shelter findShelterEntityById(Long id) {
-        return shelterRepository
-                .findById(id)
-                .orElseThrow(() -> new NotFoundException(ErrosMessages.SHELTER_NOTFOUND.getErrorMessage()));
     }
 
     private PetResponseDto toPetResponseDto(Pet pet) {
