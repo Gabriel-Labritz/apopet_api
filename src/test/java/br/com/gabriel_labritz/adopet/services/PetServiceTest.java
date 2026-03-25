@@ -18,6 +18,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -130,6 +132,40 @@ class PetServiceTest {
             // Act + Assert
             assertThrows(NotFoundException.class, () -> petService.registerPet(dto));
             verify(petRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    class getAllPets {
+        @Test
+        @DisplayName("Deve retornar todos os Pets com sucesso.")
+        void shouldReturnAllPets() {
+            // Arrange
+            when(petRepository.findAll()).thenReturn(List.of(pet));
+
+            // Act
+            List<PetResponseDto> result = petService.getAllPets();
+
+            // Assert
+            verify(petRepository).findAll();
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals(List.of(petResponseDto), result);
+        }
+
+        @Test
+        @DisplayName("Deve retornar lista vazio quando não houver pets.")
+        void shouldReturnEmptyListWhenNoPetsFound() {
+            // Arrange
+            when(petRepository.findAll()).thenReturn(List.of());
+
+            // Act
+            List<PetResponseDto> result = petService.getAllPets();
+
+            // Assert
+            verify(petRepository).findAll();
+            assertNotNull(result);
+            assertTrue(result.isEmpty());
         }
     }
 }
