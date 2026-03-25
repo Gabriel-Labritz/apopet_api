@@ -10,7 +10,10 @@ import br.com.gabriel_labritz.adopet.exceptions.NotFoundException;
 import br.com.gabriel_labritz.adopet.infrastructure.entities.Pet;
 import br.com.gabriel_labritz.adopet.infrastructure.entities.Shelter;
 import br.com.gabriel_labritz.adopet.infrastructure.repositories.PetRepository;
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
@@ -231,6 +234,26 @@ class PetServiceTest {
             verify(petRepository).findById(petId);
             assertNotNull(result);
             assertEquals(pet, result);
+        }
+    }
+
+    @Nested
+    class getPetById {
+        @Test
+        @DisplayName("Deve retornar um Pet pelo id.")
+        void shouldReturnAPetById() {
+            // Arrange
+            Long petId = 2L;
+            when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+
+            // Act
+            PetResponseDto result = petService.getPetById(petId);
+
+            // Assert
+            verify(petRepository).findById(petId);
+
+            assertNotNull(result);
+            assertEquals(petResponseDto, result);
         }
     }
 }
