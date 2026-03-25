@@ -73,7 +73,7 @@ public class PetController {
     })
     @GetMapping("/avaliable")
     public ResponseEntity<List<PetResponseDto>> getAllAvaliable() {
-        return ResponseEntity.ok().body(this.petService.getAllPetsAvaliable());
+        return ResponseEntity.ok().body(this.petService.getAllPetsAvailable());
     }
 
     @Operation(summary = "Busca pet por id",

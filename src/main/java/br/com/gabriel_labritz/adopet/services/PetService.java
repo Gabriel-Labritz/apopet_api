@@ -33,7 +33,7 @@ public class PetService {
         return petRepository.findAll().stream().map(this::toPetResponseDto).toList();
     }
 
-    public List<PetResponseDto> getAllPetsAvaliable() {
+    public List<PetResponseDto> getAllPetsAvailable() {
         return petRepository.findByAdoptedFalseOrderByIdDesc().stream().map(this::toPetResponseDto).toList();
     }
 

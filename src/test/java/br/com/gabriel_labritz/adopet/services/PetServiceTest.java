@@ -168,4 +168,38 @@ class PetServiceTest {
             assertTrue(result.isEmpty());
         }
     }
+
+    @Nested
+    class getAllPetsAvailable {
+        @Test
+        @DisplayName("Deve retornar todos os pets disponíveis com sucesso.")
+        void shouldReturnAllPetsAvailable() {
+            // Arrange
+            when(petRepository.findByAdoptedFalseOrderByIdDesc()).thenReturn(List.of(pet));
+
+            // Act
+            List<PetResponseDto> result = petService.getAllPetsAvailable();
+
+            // Assert
+            verify(petRepository).findByAdoptedFalseOrderByIdDesc();
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals(List.of(petResponseDto), result);
+        }
+
+        @Test
+        @DisplayName("Deve retornar uma lista vazia quando não tem pets disponíveis.")
+        void shouldReturnEmptyListWhenPetsAvailableNotFound() {
+            // Arrange
+            when(petRepository.findByAdoptedFalseOrderByIdDesc()).thenReturn(List.of());
+
+            // Act
+            List<PetResponseDto> result = petService.getAllPetsAvailable();
+
+            // Assert
+            verify(petRepository).findByAdoptedFalseOrderByIdDesc();
+            assertNotNull(result);
+            assertTrue(result.isEmpty());
+        }
+    }
 }
