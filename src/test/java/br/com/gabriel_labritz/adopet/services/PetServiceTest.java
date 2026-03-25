@@ -19,6 +19,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -200,6 +201,36 @@ class PetServiceTest {
             verify(petRepository).findByAdoptedFalseOrderByIdDesc();
             assertNotNull(result);
             assertTrue(result.isEmpty());
+        }
+    }
+
+    @Nested
+    class findPetEntityById {
+        @Test
+        @DisplayName("Deve lançar uma NotFoundException quando o pet não for encontrado.")
+        void shouldThrowNotFoundExceptionWhenPetNotFound() {
+            // Arrange
+            Long petId = 1L;
+            when(petRepository.findById(petId)).thenReturn(Optional.empty());
+
+            // Act + Assert
+            assertThrows(NotFoundException.class, () -> petService.findPetEntityById(petId));
+        }
+
+        @Test
+        @DisplayName("Deve retornar com sucesso um pet pelo id.")
+        void shouldReturnAPet() {
+            // Arrange
+            Long petId = 1L;
+            when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+
+            // Act
+            Pet result = petService.findPetEntityById(petId);
+
+            // Assert
+            verify(petRepository).findById(petId);
+            assertNotNull(result);
+            assertEquals(pet, result);
         }
     }
 }
