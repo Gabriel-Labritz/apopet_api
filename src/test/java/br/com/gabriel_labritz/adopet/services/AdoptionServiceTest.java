@@ -24,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -203,6 +204,39 @@ class AdoptionServiceTest {
             verify(adoptionRepository).findAll();
             assertNotNull(result);
             assertTrue(result.isEmpty());
+        }
+    }
+
+    @Nested
+    class getAdoptionById {
+        @Test
+        @DisplayName("Deve retornar uma solicitação de adoção pelo id.")
+        void shouldReturnAAdoptionSolicitationById() {
+            // Arrange
+            Long adoptionId = 1L;
+            when(adoptionRepository.findById(adoptionId)).thenReturn(Optional.of(adoption));
+
+            // Act
+            AdoptionResponseDto result = adoptionService.getAdoptionById(adoptionId);
+
+            // Assert
+            verify(adoptionRepository).findById(adoptionId);
+            assertNotNull(result);
+
+            assertEquals(adoptionResponseDto.date(), result.date());
+            assertEquals(adoptionResponseDto.reason(), result.reason());
+            assertEquals(adoptionResponseDto.status(), result.status());
+        }
+
+        @Test
+        @DisplayName("Deve lançar uma NotFoundException quando a solicitação de adoção não for encontrada.")
+        void shouldThrowNotFoundExceptionWhenAdoptionSolicitationNotFound() {
+            // Arrange
+            Long adoptionId = 1L;
+            when(adoptionRepository.findById(adoptionId)).thenReturn(Optional.empty());
+
+            // Act
+            assertThrows(NotFoundException.class, () -> adoptionService.getAdoptionById(adoptionId));
         }
     }
 }
