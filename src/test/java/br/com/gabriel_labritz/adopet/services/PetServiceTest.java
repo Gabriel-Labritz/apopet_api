@@ -2,10 +2,12 @@ package br.com.gabriel_labritz.adopet.services;
 
 import br.com.gabriel_labritz.adopet.dto.pets.PetRequestDto;
 import br.com.gabriel_labritz.adopet.dto.pets.PetResponseDto;
+import br.com.gabriel_labritz.adopet.dto.pets.UpdatePetDto;
 import br.com.gabriel_labritz.adopet.dto.shelter.ShelterRequestDto;
 import br.com.gabriel_labritz.adopet.dto.shelter.ShelterResponseDto;
 import br.com.gabriel_labritz.adopet.enums.TypePet;
 import br.com.gabriel_labritz.adopet.enums.errors.ErrosMessages;
+import br.com.gabriel_labritz.adopet.exceptions.AdoptionBusinessException;
 import br.com.gabriel_labritz.adopet.exceptions.NotFoundException;
 import br.com.gabriel_labritz.adopet.infrastructure.entities.Pet;
 import br.com.gabriel_labritz.adopet.infrastructure.entities.Shelter;
@@ -254,6 +256,152 @@ class PetServiceTest {
 
             assertNotNull(result);
             assertEquals(petResponseDto, result);
+        }
+    }
+
+    @Nested
+    class updatePetById {
+        @Test
+        @DisplayName("Deve chamar findPetEntityById")
+        void shouldCallFindPetEntityById() {
+            // Arrange
+            Long petId = 2L;
+            UpdatePetDto updateDto = new UpdatePetDto(12, 5.2, null);
+
+            when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+            when(petRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+            // Act
+            petService.updatePetById(petId, updateDto);
+
+            // Assert
+            verify(petRepository).findById(petId);
+        }
+
+        @Test
+        @DisplayName("Deve lançar uma AdoptionBusinessException quando o pet informado para atualização já foi adotado.")
+        void shouldThrowAdoptionBusinessExceptionWhenPetWasAdopted() {
+            // Arrange
+            Long petId = 2L;
+            UpdatePetDto updateDto = new UpdatePetDto(12, 5.2, null);
+
+            Pet petMock = mock(Pet.class);
+
+            when(petRepository.findById(petId)).thenReturn(Optional.of(petMock));
+            when(petMock.getAdopted()).thenReturn(true);
+
+            // Act + Assert
+            assertThrows(AdoptionBusinessException.class, () -> petService.updatePetById(petId, updateDto));
+            verify(petRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Não deve chamar findShelterEntityById quando o abrigo não for enviado.")
+        void shouldNotCallFindShelterEntityByIdWhenShelterIsNotProvided() {
+            // Arrange
+            Long petId = 2L;
+            UpdatePetDto updateDto = new UpdatePetDto(12, 5.2, null);
+
+            when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+            when(petRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+            // Act
+            petService.updatePetById(petId, updateDto);
+
+            // Assert
+            verify(shelterService, never()).findShelterEntityById(any());
+        }
+
+        @Test
+        @DisplayName("Deve atualizar o abrigo do pet quando o abrigo é enviado.")
+        void shouldUpdatePetShelterWhenShelterIsProvided() {
+            // Arrange
+            Long petId = 2L;
+            UpdatePetDto updateDto = new UpdatePetDto(null, null, 1L);
+
+            when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+            when(shelterService.findShelterEntityById(updateDto.shelterId())).thenReturn(shelter);
+            when(petRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+            // Act
+            petService.updatePetById(petId, updateDto);
+
+            // Assert
+            verify(petRepository).findById(petId);
+            verify(shelterService).findShelterEntityById(updateDto.shelterId());
+            verify(petRepository).save(petCaptor.capture());
+
+            Pet petCaptured = petCaptor.getValue();
+            assertEquals(shelter, petCaptured.getShelter());
+        }
+
+        @Test
+        @DisplayName("Deve atualizar a idade do pet quando a idade é enviada.")
+        void shouldUpdatePetAgeWhenAgeIsProvided() {
+            // Arrange
+            Long petId = 2L;
+            UpdatePetDto updateDto = new UpdatePetDto(12, null, null);
+
+            when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+            when(petRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+            // Act
+            petService.updatePetById(petId, updateDto);
+
+            // Assert
+            verify(petRepository).findById(petId);
+            verify(shelterService, never()).findShelterEntityById(any());
+            verify(petRepository).save(petCaptor.capture());
+
+            Pet petCaptured = petCaptor.getValue();
+            assertEquals(updateDto.age(), petCaptured.getAge());
+        }
+
+        @Test
+        @DisplayName("Deve atualizar o peso do pet quando o peso é enviado.")
+        void shouldUpdatePetWeightWhenWeightIsProvided() {
+            // Arrange
+            Long petId = 2L;
+            UpdatePetDto updateDto = new UpdatePetDto(null, 5.1, null);
+
+            when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+            when(petRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+            // Act
+            petService.updatePetById(petId, updateDto);
+
+            // Assert
+            verify(petRepository).findById(petId);
+            verify(shelterService, never()).findShelterEntityById(any());
+            verify(petRepository).save(petCaptor.capture());
+
+            Pet petCaptured = petCaptor.getValue();
+            assertEquals(updateDto.weight(), petCaptured.getWeight());
+        }
+
+        @Test
+        @DisplayName("Deve atualizar o peso, idade e abrigo do pet.")
+        void shouldUpdatePetWeightPetAgeAndPetShelter() {
+            // Arrange
+            Long petId = 2L;
+            UpdatePetDto updateDto = new UpdatePetDto(12, 5.1, 3L);
+
+            when(petRepository.findById(petId)).thenReturn(Optional.of(pet));
+            when(shelterService.findShelterEntityById(updateDto.shelterId())).thenReturn(shelter);
+            when(petRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+            // Act
+            petService.updatePetById(petId, updateDto);
+
+            // Assert
+            verify(petRepository).findById(petId);
+            verify(shelterService).findShelterEntityById(updateDto.shelterId());
+            verify(petRepository).save(petCaptor.capture());
+
+            Pet petCaptured = petCaptor.getValue();
+            assertEquals(updateDto.weight(), petCaptured.getWeight());
+            assertEquals(updateDto.age(), petCaptured.getAge());
+            assertEquals(shelter, petCaptured.getShelter());
         }
     }
 }
