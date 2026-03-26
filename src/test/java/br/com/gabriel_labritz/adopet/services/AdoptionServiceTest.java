@@ -25,8 +25,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -170,6 +169,40 @@ class AdoptionServiceTest {
             assertEquals(adoptionResponseDto.reason(), result.reason());
             assertEquals(AdoptionStatus.EM_ANDAMENTO, result.status());
             assertEquals(LocalDate.now(), result.date());
+        }
+    }
+
+    @Nested
+    class getAllAdoptions {
+        @Test
+        @DisplayName("Deve retornar todas as solicitações de adoções com sucesso.")
+        void shouldReturnAllAdoptionSolicitations() {
+            // Arrange
+            when(adoptionRepository.findAll()).thenReturn(List.of(adoption));
+
+            // Act
+            List<AdoptionResponseDto> result = adoptionService.getAllAdoptions();
+
+            // Assert
+            verify(adoptionRepository).findAll();
+            assertNotNull(result);
+            assertEquals(1, result.size());
+            assertEquals(List.of(adoptionResponseDto), result);
+        }
+
+        @Test
+        @DisplayName("Deve retornar uma lista vazia quando não houver solicitações de adoção.")
+        void shouldReturnEmptyListWhenAdoptionSolicitationsNotFound() {
+            // Arrange
+            when(adoptionRepository.findAll()).thenReturn(List.of());
+
+            // Act
+            List<AdoptionResponseDto> result = adoptionService.getAllAdoptions();
+
+            // Assert
+            verify(adoptionRepository).findAll();
+            assertNotNull(result);
+            assertTrue(result.isEmpty());
         }
     }
 }
