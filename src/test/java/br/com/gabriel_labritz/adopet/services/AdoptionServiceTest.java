@@ -239,4 +239,62 @@ class AdoptionServiceTest {
             assertThrows(NotFoundException.class, () -> adoptionService.getAdoptionById(adoptionId));
         }
     }
+
+    @Nested
+    class approveAdoption {
+        @Test
+        @DisplayName("Deve aprovar uma solicitação de adoção.")
+        void shouldApproveAAdoptionSolicitation() {
+            // Arrange
+            Long adoptionId = 1L;
+            when(adoptionRepository.findById(adoptionId)).thenReturn(Optional.of(adoption));
+
+            // Act
+            adoptionService.approveAdoption(adoptionId);
+
+            // Assert
+            verify(adoptionRepository).findById(adoptionId);
+            assertEquals(AdoptionStatus.APROVADO, adoption.getStatus());
+        }
+
+        @Test
+        @DisplayName("Deve lançar uma NotFoundException quando a solicitação de adoção não for encontrada.")
+        void shouldThrowNotFoundExceptionWhenAdoptionSolicitationNotFound() {
+            // Arrange
+            Long adoptionId = 1L;
+            when(adoptionRepository.findById(adoptionId)).thenReturn(Optional.empty());
+
+            // Act
+            assertThrows(NotFoundException.class, () -> adoptionService.getAdoptionById(adoptionId));
+        }
+    }
+
+    @Nested
+    class disapproveAdoption {
+        @Test
+        @DisplayName("Deve rejeitar uma solicitação de adoção.")
+        void shouldRejectAAdoptionSolicitation() {
+            // Arrange
+            Long adoptionId = 1L;
+            when(adoptionRepository.findById(adoptionId)).thenReturn(Optional.of(adoption));
+
+            // Act
+            adoptionService.disapproveAdoption(adoptionId);
+
+            // Assert
+            verify(adoptionRepository).findById(adoptionId);
+            assertEquals(AdoptionStatus.REPROVADO, adoption.getStatus());
+        }
+
+        @Test
+        @DisplayName("Deve lançar uma NotFoundException quando a solicitação de adoção não for encontrada.")
+        void shouldThrowNotFoundExceptionWhenAdoptionSolicitationNotFound() {
+            // Arrange
+            Long adoptionId = 1L;
+            when(adoptionRepository.findById(adoptionId)).thenReturn(Optional.empty());
+
+            // Act
+            assertThrows(NotFoundException.class, () -> adoptionService.getAdoptionById(adoptionId));
+        }
+    }
 }
