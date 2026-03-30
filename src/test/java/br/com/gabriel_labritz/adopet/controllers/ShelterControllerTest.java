@@ -2,6 +2,7 @@ package br.com.gabriel_labritz.adopet.controllers;
 
 import br.com.gabriel_labritz.adopet.dto.shelter.ShelterRequestDto;
 import br.com.gabriel_labritz.adopet.dto.shelter.ShelterResponseDto;
+import br.com.gabriel_labritz.adopet.dto.shelter.ShelterUpdateDto;
 import br.com.gabriel_labritz.adopet.enums.errors.ErrosMessages;
 import br.com.gabriel_labritz.adopet.exceptions.DuplicationExistsException;
 import br.com.gabriel_labritz.adopet.exceptions.NotFoundException;
@@ -21,8 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -38,6 +38,9 @@ class ShelterControllerTest {
 
     @Autowired
     private JacksonTester<ShelterRequestDto> shelterRequestDtoTester;
+
+    @Autowired
+    private JacksonTester<ShelterUpdateDto> shelterUpdateDtoTester;
 
     @Nested
     class registerShelter {
@@ -127,7 +130,7 @@ class ShelterControllerTest {
 
         @Test
         @DisplayName("Deve retornar status 404 quando o abrigo não for encontrado.")
-        void shouldReturn400StatusWhenShelterNotFound() throws Exception {
+        void shouldReturn404StatusWhenShelterNotFound() throws Exception {
             // Arrange
             Long shelterId = 1L;
 
@@ -140,6 +143,97 @@ class ShelterControllerTest {
                     .andExpect(jsonPath("$.instance").value("/shelter/1"))
                     .andExpect(jsonPath("$.status").value("404"))
                     .andExpect(jsonPath("$.title").value("Not Found"));
+        }
+    }
+
+    @Nested
+    class updateShelter {
+        @Test
+        @DisplayName("Deve retornar 200 status quando o abrigo for atualizado")
+        void shouldReturn200StatusWhenShelterIsUpdated() throws Exception {
+            // Arrange
+            Long shelterId = 3L;
+            ShelterUpdateDto request = new ShelterUpdateDto("shelterupdated@gmail.com", "1188888888");
+            ShelterResponseDto response = new ShelterResponseDto(1L, request.email(), request.phone());
+
+            when(shelterService.updateShelterById(shelterId, request)).thenReturn(response);
+
+            // Act + Assert
+            mvc.perform(patch("/shelter/{id}", shelterId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(shelterUpdateDtoTester.write(request).getJson()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(response.id()))
+                    .andExpect(jsonPath("$.email").value(response.email()))
+                    .andExpect(jsonPath("$.phone").value(response.phone()));
+
+            // Assert
+            verify(shelterService).updateShelterById(shelterId, request);
+        }
+
+        @Test
+        @DisplayName("Deve retornar status 400 quando o id do abrigo for inválido.")
+        void shouldReturn400StatusWhenShelterIdInvalid() throws Exception {
+            // Arrange
+            Long shelterId = -3L;
+
+            // Act + Assert
+            mvc.perform(patch("/shelter/{id}", shelterId))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("Deve retornar status 400 quando os dados do abrigo forem inválidos.")
+        void shouldReturn400StatusWhenInvalidData() throws Exception {
+            // Arrange
+            Long shelterId = 3L;
+            ShelterUpdateDto request = new ShelterUpdateDto("shelter", "1188888889888111");
+
+            // Act + Assert
+            mvc.perform(patch("/shelter/{id}", shelterId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(shelterUpdateDtoTester.write(request).getJson()))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("Deve retornar status 404 quando o abrigo não for encontrado.")
+        void shouldReturn404StatusWhenShelterNotFound() throws Exception {
+            // Arrange
+            Long shelterId = 3L;
+            ShelterUpdateDto request = new ShelterUpdateDto("shelterupdated@gmail.com", "1188888888");
+
+            when(shelterService.updateShelterById(shelterId, request)).thenThrow(new NotFoundException(ErrosMessages.SHELTER_NOTFOUND.getErrorMessage()));
+
+            // Act + Assert
+            mvc.perform(patch("/shelter/{id}", shelterId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(shelterUpdateDtoTester.write(request).getJson()))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.detail").value("O abrigo não foi encontrado."))
+                    .andExpect(jsonPath("$.instance").value("/shelter/3"))
+                    .andExpect(jsonPath("$.status").value("404"))
+                    .andExpect(jsonPath("$.title").value("Not Found"));
+        }
+
+        @Test
+        @DisplayName("Deve retornar status 409 quando o email e/ou telefone do abrigo já estão em uso.")
+        void shouldReturn409StatusWhenShelterEmailOrPhoneAlreadyUsed() throws Exception {
+            // Arrange
+            Long shelterId = 3L;
+            ShelterUpdateDto request = new ShelterUpdateDto("shelterupdated@gmail.com", "1188888888");
+
+            when(shelterService.updateShelterById(shelterId, request)).thenThrow(new DuplicationExistsException(ErrosMessages.EMAIL_EXISTS.getErrorMessage()));
+
+            // Act + Assert
+            mvc.perform(patch("/shelter/{id}", shelterId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(shelterUpdateDtoTester.write(request).getJson()))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.detail").value("O e-mail informado já está em uso."))
+                    .andExpect(jsonPath("$.instance").value("/shelter/3"))
+                    .andExpect(jsonPath("$.status").value("409"))
+                    .andExpect(jsonPath("$.title").value("Conflict"));
         }
     }
 }
