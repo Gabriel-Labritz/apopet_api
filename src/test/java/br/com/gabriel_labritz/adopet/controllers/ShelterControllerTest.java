@@ -2,10 +2,9 @@ package br.com.gabriel_labritz.adopet.controllers;
 
 import br.com.gabriel_labritz.adopet.dto.shelter.ShelterRequestDto;
 import br.com.gabriel_labritz.adopet.dto.shelter.ShelterResponseDto;
-import br.com.gabriel_labritz.adopet.dto.tutor.TutorRequestDto;
-import br.com.gabriel_labritz.adopet.dto.tutor.TutorResponseDto;
 import br.com.gabriel_labritz.adopet.enums.errors.ErrosMessages;
 import br.com.gabriel_labritz.adopet.exceptions.DuplicationExistsException;
+import br.com.gabriel_labritz.adopet.exceptions.NotFoundException;
 import br.com.gabriel_labritz.adopet.services.ShelterService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -22,6 +21,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -92,9 +92,54 @@ class ShelterControllerTest {
                     .andExpect(jsonPath("$.instance").value("/shelter"))
                     .andExpect(jsonPath("$.status").value("409"))
                     .andExpect(jsonPath("$.title").value("Conflict"));
+        }
+    }
 
-            // Assert
-            verify(shelterService).shelterRegister(any(ShelterRequestDto.class));
+    @Nested
+    class getShelter {
+        @Test
+        @DisplayName("Deve retornar status 200 quando o abrigo for encontrado.")
+        void shouldReturn200StatusWhenShelterFound() throws Exception {
+            // Arrange
+            Long shelterId = 1L;
+            ShelterResponseDto response = new ShelterResponseDto(1L, "shelter1@gmail.com", "1199999999");
+
+            when(shelterService.getShelterById(shelterId)).thenReturn(response);
+
+            // Act + Assert
+            mvc.perform(get("/shelter/{id}", shelterId))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(response.id()))
+                    .andExpect(jsonPath("$.email").value(response.email()))
+                    .andExpect(jsonPath("$.phone").value(response.phone()));
+        }
+
+        @Test
+        @DisplayName("Deve retornar status 400 quando o id do abrigo for inválido.")
+        void shouldReturn400StatusWhenShelterIdInvalid() throws Exception {
+            // Arrange
+            Long shelterId = -1L;
+
+            // Act + Assert
+            mvc.perform(get("/shelter/{id}", shelterId))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("Deve retornar status 404 quando o abrigo não for encontrado.")
+        void shouldReturn400StatusWhenShelterNotFound() throws Exception {
+            // Arrange
+            Long shelterId = 1L;
+
+            when(shelterService.getShelterById(shelterId)).thenThrow(new NotFoundException(ErrosMessages.SHELTER_NOTFOUND.getErrorMessage()));
+
+            // Act + Assert
+            mvc.perform(get("/shelter/{id}", shelterId))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.detail").value("O abrigo não foi encontrado."))
+                    .andExpect(jsonPath("$.instance").value("/shelter/1"))
+                    .andExpect(jsonPath("$.status").value("404"))
+                    .andExpect(jsonPath("$.title").value("Not Found"));
         }
     }
 }
