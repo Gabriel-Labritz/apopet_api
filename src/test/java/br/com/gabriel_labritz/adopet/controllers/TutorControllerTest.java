@@ -148,4 +148,84 @@ class TutorControllerTest {
                     .andExpect(jsonPath("$.title").value("Not Found"));
         }
     }
+
+    @Nested
+    class updateTutor {
+        @Test
+        @DisplayName("Deve retornar status 200 quando tutor for atualizado com sucesso.")
+        void shouldReturn200StatusWhenTutorUpdated() throws Exception {
+            // Arrange
+            Long tutorId = 2L;
+            TutorUpdateDto request = new TutorUpdateDto("jonhupdate@gmail.com", "11987654321");
+            TutorResponseDto response = new TutorResponseDto("Jonh", request.email(), request.phone());
+
+            when(tutorService.updateTutorById(tutorId, request)).thenReturn(response);
+
+            // Act + Assert
+            mvc.perform(patch("/tutor/{id}", tutorId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(tutorUpdateDtoTester.write(request).getJson()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.name").value(response.name()))
+                    .andExpect(jsonPath("$.email").value(response.email()))
+                    .andExpect(jsonPath("$.phone").value(response.phone()));
+        }
+
+        @Test
+        @DisplayName("Deve retornar status 400 quando o id é inválido.")
+        void shouldReturn400StatusWhenInvalidId() throws Exception {
+            // Arrange
+            Long tutorId = -2L;
+            TutorUpdateDto request = new TutorUpdateDto("jonhupdate@gmail.com", "11987654321");
+            TutorResponseDto response = new TutorResponseDto("Jonh", request.email(), request.phone());
+
+            when(tutorService.updateTutorById(tutorId, request)).thenReturn(response);
+
+            // Act + Assert
+            mvc.perform(patch("/tutor/{id}", tutorId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(tutorUpdateDtoTester.write(request).getJson()))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("Deve retornar status 404 quando o tutor não for encontrado.")
+        void shouldReturn404StatusWhenTutorNotFound() throws Exception {
+            // Arrange
+            Long tutorId = 2L;
+            TutorUpdateDto request = new TutorUpdateDto("jonhupdate@gmail.com", "11987654321");
+
+            when(tutorService.updateTutorById(tutorId, request)).thenThrow(new NotFoundException(ErrosMessages.TUTOR_NOTFOUND.getErrorMessage()));
+
+            // Act + Assert
+            mvc.perform(patch("/tutor/{id}", tutorId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(tutorUpdateDtoTester.write(request).getJson()))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.detail").value("O Tutor não foi encontrado."))
+                    .andExpect(jsonPath("$.instance").value("/tutor/2"))
+                    .andExpect(jsonPath("$.status").value("404"))
+                    .andExpect(jsonPath("$.title").value("Not Found"));
+        }
+
+        @Test
+        @DisplayName("Deve retornar status 409 quando o email do tutor já está em uso.")
+        void shouldReturn409StatusWhenEmailTutorAlreadyUsed() throws Exception {
+            // Arrange
+            Long tutorId = 2L;
+            TutorUpdateDto request = new TutorUpdateDto("jonhupdate@gmail.com", "11987654321");
+
+            when(tutorService.updateTutorById(tutorId, request)).thenThrow(new DuplicationExistsException(ErrosMessages.EMAIL_EXISTS.getErrorMessage()));
+
+            // Act + Assert
+            mvc.perform(patch("/tutor/{id}", tutorId)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(tutorUpdateDtoTester.write(request).getJson()))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.detail").value("O e-mail informado já está em uso."))
+                    .andExpect(jsonPath("$.instance").value("/tutor/2"))
+                    .andExpect(jsonPath("$.status").value("409"))
+                    .andExpect(jsonPath("$.title").value("Conflict"));
+        }
+    }
 }
