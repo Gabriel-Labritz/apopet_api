@@ -19,7 +19,6 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.io.IOException;
 import java.time.LocalDate;
 import java.util.List;
 
@@ -152,6 +151,59 @@ class AdoptionControllerTest {
             // Act + Assert
             mvc.perform(get("/adoption"))
                     .andExpect(status().isOk());
+
+            verify(adoptionService).getAllAdoptions();
+        }
+    }
+
+    @Nested
+    class getAdoption {
+        @Test
+        @DisplayName("Deve retornar 200 status quando a solicitação de adoção for encontrada.")
+        void shouldReturn200StatusWhenAdoptionSolicitationIsFounded() throws Exception {
+            // Arrange
+            Long adoptionId = 1L;
+            AdoptionResponseDto response = new AdoptionResponseDto(1L, LocalDate.now(), "Motivo...", AdoptionStatus.EM_ANDAMENTO);
+
+            when(adoptionService.getAdoptionById(adoptionId)).thenReturn(response);
+
+            // Act + Assert
+            mvc.perform(get("/adoption/{id}", adoptionId))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(response.id()))
+                    .andExpect(jsonPath("$.date").value(response.date().toString()))
+                    .andExpect(jsonPath("$.reason").value(response.reason()))
+                    .andExpect(jsonPath("$.status").value(response.status().name()));
+
+            verify(adoptionService).getAdoptionById(adoptionId);
+        }
+
+        @Test
+        @DisplayName("Deve retornar 400 status quando o id da solicitação de adoção é inválido.")
+        void shouldReturn400StatusWhenAdoptionSolicitationIdIsInvalid() throws Exception {
+            // Arrange
+            Long adoptionId = -1L;
+
+            // Act + Assert
+            mvc.perform(get("/adoption/{id}", adoptionId))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("Deve retornar 404 status quando a solicitação de adoção não for encontrada.")
+        void shouldReturn404StatusWhenAdoptionSolicitationNotFound() throws Exception {
+            // Arrange
+            Long adoptionId = 1L;
+
+            when(adoptionService.getAdoptionById(adoptionId)).thenThrow(new NotFoundException(ErrosMessages.ADOPTION_NOTFOUND.getErrorMessage()));
+
+            // Act + Assert
+            mvc.perform(get("/adoption/{id}", adoptionId))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.detail").value("A adoção não foi encontrada."))
+                    .andExpect(jsonPath("$.instance").value("/adoption/1"))
+                    .andExpect(jsonPath("$.status").value("404"))
+                    .andExpect(jsonPath("$.title").value("Not Found"));;
         }
     }
 }
