@@ -165,4 +165,69 @@ class PetControllerTest {
         }
     }
 
+    @Nested
+    class getPet {
+        @Test
+        @DisplayName("Deve retornar status 200 quando o pet for encontrado.")
+        void shouldReturn200StatusWhenPetFounded() throws Exception {
+            // Arrange
+            Long petId = 2L;
+            ShelterResponseDto shelter = new ShelterResponseDto(1L, "shelter1@gmail.com", "1155555555");
+            PetResponseDto response = new PetResponseDto(
+                    2L,
+                    "Sophia",
+                    TypePet.toPetType("Gato"),
+                    "Siâmes", 15,
+                    5.1,
+                    "Marrom", shelter);
+
+            when(petService.getPetById(petId)).thenReturn(response);
+
+            // Act + Assert
+            mvc.perform(get("/pets/{id}", petId))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.id").value(response.id()))
+                    .andExpect(jsonPath("$.name").value(response.name()))
+                    .andExpect(jsonPath("$.type").value(response.type().name()))
+                    .andExpect(jsonPath("$.breed").value(response.breed()))
+                    .andExpect(jsonPath("$.age").value(response.age()))
+                    .andExpect(jsonPath("$.weight").value(response.weight()))
+                    .andExpect(jsonPath("$.color").value(response.color()))
+                    .andExpect(jsonPath("$.shelter.id").value(response.shelter().id()))
+                    .andExpect(jsonPath("$.shelter.email").value(response.shelter().email()))
+                    .andExpect(jsonPath("$.shelter.phone").value(response.shelter().phone()));
+
+            // Assert
+            verify(petService).getPetById(petId);
+        }
+
+        @Test
+        @DisplayName("Deve retornar status 400 quando o id é inválido.")
+        void shouldReturn400StatusWhenPetIdIsInvalid() throws Exception {
+            // Arrange
+            Long petId = -2L;
+
+            // Act + Assert
+            mvc.perform(get("/pets/{id}", petId))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("Deve retornar status 404 quando o pet não for encontrado.")
+        void shouldReturn404StatusWhenPetNotFound() throws Exception {
+            // Arrange
+            Long petId = 2L;
+
+            when(petService.getPetById(petId)).thenThrow(new NotFoundException(ErrosMessages.PET_NOTFOUND.getErrorMessage()));
+
+            // Act + Assert
+            mvc.perform(get("/pets/{id}", petId))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.detail").value("O pet não foi encontrado."))
+                    .andExpect(jsonPath("$.instance").value("/pets/2"))
+                    .andExpect(jsonPath("$.status").value("404"))
+                    .andExpect(jsonPath("$.title").value("Not Found"));
+        }
+    }
+
 }
