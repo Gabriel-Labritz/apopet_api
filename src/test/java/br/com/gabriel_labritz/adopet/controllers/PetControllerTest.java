@@ -19,6 +19,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.util.List;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -108,6 +110,32 @@ class PetControllerTest {
                     .andExpect(jsonPath("$.status").value("404"))
                     .andExpect(jsonPath("$.title").value("Not Found"));;
 
+        }
+    }
+
+    @Nested
+    class getAll {
+        @Test
+        @DisplayName("Deve retornar status 200.")
+        void shouldReturn200Status() throws Exception {
+            // Arrange
+            ShelterResponseDto shelter = new ShelterResponseDto(1L, "shelter1@gmail.com", "1155555555");
+            PetResponseDto response = new PetResponseDto(
+                    2L,
+                    "Sophia",
+                    TypePet.toPetType("Gato"),
+                    "Siâmes", 15,
+                    5.1,
+                    "Marrom", shelter);
+
+            when(petService.getAllPets()).thenReturn(List.of(response));
+
+            // Act + Assert
+            mvc.perform(get("/pets"))
+                    .andExpect(status().isOk());
+
+            // Assert
+            verify(petService).getAllPets();
         }
     }
 }
