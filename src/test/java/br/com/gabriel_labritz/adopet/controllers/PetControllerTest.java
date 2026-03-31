@@ -138,4 +138,31 @@ class PetControllerTest {
             verify(petService).getAllPets();
         }
     }
+
+    @Nested
+    class getAllAvaliable {
+        @Test
+        @DisplayName("Deve retornar status 200.")
+        void shouldReturn200Status() throws Exception {
+            // Arrange
+            ShelterResponseDto shelter = new ShelterResponseDto(1L, "shelter1@gmail.com", "1155555555");
+            PetResponseDto response = new PetResponseDto(
+                    2L,
+                    "Sophia",
+                    TypePet.toPetType("Gato"),
+                    "Siâmes", 15,
+                    5.1,
+                    "Marrom", shelter);
+
+            when(petService.getAllPetsAvailable()).thenReturn(List.of(response));
+
+            // Act + Assert
+            mvc.perform(get("/pets/avaliable"))
+                    .andExpect(status().isOk());
+
+            // Assert
+            verify(petService).getAllPetsAvailable();
+        }
+    }
+
 }
