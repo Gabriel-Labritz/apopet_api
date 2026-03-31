@@ -251,7 +251,7 @@ class AdoptionControllerTest {
 
         @Test
         @DisplayName("Deve retornar 409 status quando a solicitação de adoção já foi aprovada ou reprovada.")
-        void shouldReturn404StatusWhenAdoptionSolicitationAlreadyApprovedOrRejected() throws Exception {
+        void shouldReturn409StatusWhenAdoptionSolicitationAlreadyApprovedOrRejected() throws Exception {
             // Arrange
             Long adoptionId = 1L;
 
@@ -263,6 +263,69 @@ class AdoptionControllerTest {
                     .andExpect(status().isConflict())
                     .andExpect(jsonPath("$.detail").value("Essa adoção não pode ser aprovada."))
                     .andExpect(jsonPath("$.instance").value("/adoption/1/approve"))
+                    .andExpect(jsonPath("$.status").value("409"))
+                    .andExpect(jsonPath("$.title").value("Conflict"));
+        }
+    }
+
+    @Nested
+    class disapprove {
+        @Test
+        @DisplayName("Deve retornar 204 status quando a adoção for reprovada.")
+        void shouldReturn204StatusWhenAdoptionIsRejected() throws Exception {
+            // Arrange
+            Long adoptionId = 1L;
+
+            // Act + Assert
+            mvc.perform(put("/adoption/{id}/disapprove", adoptionId))
+                    .andExpect(status().isNoContent());
+
+            verify(adoptionService).disapproveAdoption(adoptionId);
+        }
+
+        @Test
+        @DisplayName("Deve retornar 400 status quando o id da solicitação de adoção é inválido.")
+        void shouldReturn400StatusWhenAdoptionSolicitationIdIsInvalid() throws Exception {
+            // Arrange
+            Long adoptionId = -1L;
+
+            // Act + Assert
+            mvc.perform(put("/adoption/{id}/disapprove", adoptionId))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("Deve retornar 404 status quando a solicitação de adoção não for encontrada.")
+        void shouldReturn404StatusWhenAdoptionSolicitationNotFound() throws Exception {
+            // Arrange
+            Long adoptionId = 1L;
+
+            doThrow(new NotFoundException(ErrosMessages.ADOPTION_NOTFOUND.getErrorMessage()))
+                    .when(adoptionService).disapproveAdoption(adoptionId);
+
+            // Act + Assert
+            mvc.perform(put("/adoption/{id}/disapprove", adoptionId))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.detail").value("A adoção não foi encontrada."))
+                    .andExpect(jsonPath("$.instance").value("/adoption/1/disapprove"))
+                    .andExpect(jsonPath("$.status").value("404"))
+                    .andExpect(jsonPath("$.title").value("Not Found"));
+        }
+
+        @Test
+        @DisplayName("Deve retornar 409 status quando a solicitação de adoção já foi aprovada ou reprovada.")
+        void shouldReturn409StatusWhenAdoptionSolicitationAlreadyApprovedOrRejected() throws Exception {
+            // Arrange
+            Long adoptionId = 1L;
+
+            doThrow(new AdoptionBusinessException(ErrosMessages.ADOPTION_CANNOT_BE_REJECTED.getErrorMessage()))
+                    .when(adoptionService).disapproveAdoption(adoptionId);
+
+            // Act + Assert
+            mvc.perform(put("/adoption/{id}/disapprove", adoptionId))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.detail").value("Essa adoção não pode ser reprovada."))
+                    .andExpect(jsonPath("$.instance").value("/adoption/1/disapprove"))
                     .andExpect(jsonPath("$.status").value("409"))
                     .andExpect(jsonPath("$.title").value("Conflict"));
         }
