@@ -19,9 +19,14 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.io.IOException;
 import java.time.LocalDate;
+import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -59,6 +64,8 @@ class AdoptionControllerTest {
                     .andExpect(jsonPath("$.date").value(response.date().toString()))
                     .andExpect(jsonPath("$.reason").value(response.reason()))
                     .andExpect(jsonPath("$.status").value(response.status().name()));
+
+            verify(adoptionService).adopetPet(any(AdoptionRequestDto.class));
         }
 
         @Test
@@ -129,6 +136,22 @@ class AdoptionControllerTest {
                     .andExpect(jsonPath("$.instance").value("/adoption/adopet"))
                     .andExpect(jsonPath("$.status").value("409"))
                     .andExpect(jsonPath("$.title").value("Conflict"));
+        }
+    }
+
+    @Nested
+    class getAdoptions {
+        @Test
+        @DisplayName("Deve retornar 200 status")
+        void shouldReturn200Status() throws Exception {
+            // Arrange
+            AdoptionResponseDto response = new AdoptionResponseDto(1L, LocalDate.now(), "Motivo...", AdoptionStatus.EM_ANDAMENTO);
+
+            when(adoptionService.getAllAdoptions()).thenReturn(List.of(response));
+
+            // Act + Assert
+            mvc.perform(get("/adoption"))
+                    .andExpect(status().isOk());
         }
     }
 }
