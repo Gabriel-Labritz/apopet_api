@@ -23,10 +23,8 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.mockito.Mockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -204,6 +202,69 @@ class AdoptionControllerTest {
                     .andExpect(jsonPath("$.instance").value("/adoption/1"))
                     .andExpect(jsonPath("$.status").value("404"))
                     .andExpect(jsonPath("$.title").value("Not Found"));;
+        }
+    }
+
+    @Nested
+    class approve {
+        @Test
+        @DisplayName("Deve retornar 204 status quando a adoção for aprovada.")
+        void shouldReturn204StatusWhenAdoptionIsApproved() throws Exception {
+            // Arrange
+            Long adoptionId = 1L;
+
+            // Act + Assert
+            mvc.perform(put("/adoption/{id}/approve", adoptionId))
+                    .andExpect(status().isNoContent());
+
+            verify(adoptionService).approveAdoption(adoptionId);
+        }
+
+        @Test
+        @DisplayName("Deve retornar 400 status quando o id da solicitação de adoção é inválido.")
+        void shouldReturn400StatusWhenAdoptionSolicitationIdIsInvalid() throws Exception {
+            // Arrange
+            Long adoptionId = -1L;
+
+            // Act + Assert
+            mvc.perform(put("/adoption/{id}/approve", adoptionId))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("Deve retornar 404 status quando a solicitação de adoção não for encontrada.")
+        void shouldReturn404StatusWhenAdoptionSolicitationNotFound() throws Exception {
+            // Arrange
+            Long adoptionId = 1L;
+
+           doThrow(new NotFoundException(ErrosMessages.ADOPTION_NOTFOUND.getErrorMessage()))
+                   .when(adoptionService).approveAdoption(adoptionId);
+
+            // Act + Assert
+            mvc.perform(put("/adoption/{id}/approve", adoptionId))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.detail").value("A adoção não foi encontrada."))
+                    .andExpect(jsonPath("$.instance").value("/adoption/1/approve"))
+                    .andExpect(jsonPath("$.status").value("404"))
+                    .andExpect(jsonPath("$.title").value("Not Found"));
+        }
+
+        @Test
+        @DisplayName("Deve retornar 409 status quando a solicitação de adoção já foi aprovada ou reprovada.")
+        void shouldReturn404StatusWhenAdoptionSolicitationAlreadyApprovedOrRejected() throws Exception {
+            // Arrange
+            Long adoptionId = 1L;
+
+            doThrow(new AdoptionBusinessException(ErrosMessages.ADOPTION_CANNOT_BE_APPROVED.getErrorMessage()))
+                    .when(adoptionService).approveAdoption(adoptionId);
+
+            // Act + Assert
+            mvc.perform(put("/adoption/{id}/approve", adoptionId))
+                    .andExpect(status().isConflict())
+                    .andExpect(jsonPath("$.detail").value("Essa adoção não pode ser aprovada."))
+                    .andExpect(jsonPath("$.instance").value("/adoption/1/approve"))
+                    .andExpect(jsonPath("$.status").value("409"))
+                    .andExpect(jsonPath("$.title").value("Conflict"));
         }
     }
 }
